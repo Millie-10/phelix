@@ -1,0 +1,1052 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Phelix — Fraud Intelligence</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;500;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --bg:        #080c10;
+      --surface:   #0d1117;
+      --panel:     #111720;
+      --border:    #1e2733;
+      --border2:   #243040;
+      --text:      #e2eaf5;
+      --muted:     #637085;
+      --accent:    #00d4ff;
+      --accent2:   #0099bb;
+      --green:     #00e5a0;
+      --red:       #ff4d6a;
+      --orange:    #ffaa33;
+      --yellow:    #ffe066;
+      --purple:    #b388ff;
+
+      --intent-legitimate:  #00e5a0;
+      --intent-suspicious:  #ff4d6a;
+      --intent-takeover:    #ff4d6a;
+      --intent-phishing:    #ffaa33;
+      --intent-dispute:     #ffe066;
+      --intent-unusual:     #b388ff;
+      --intent-recovery:    #00d4ff;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ── Grid background ── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── Layout ── */
+    .shell {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      grid-template-rows: auto 1fr;
+      min-height: 100vh;
+    }
+
+    /* ── Header ── */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px 40px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(8,12,16,0.9);
+      backdrop-filter: blur(12px);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .logo-mark {
+      width: 36px;
+      height: 36px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 16px;
+      color: var(--bg);
+      letter-spacing: -1px;
+    }
+
+    .logo-text {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 20px;
+      letter-spacing: -0.5px;
+    }
+
+    .logo-text span {
+      color: var(--accent);
+    }
+
+    .header-meta {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+    }
+
+    .status-pill {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      background: rgba(0,229,160,0.08);
+      border: 1px solid rgba(0,229,160,0.2);
+      border-radius: 100px;
+      padding: 5px 14px;
+      font-size: 12px;
+      color: var(--green);
+      font-family: 'DM Mono', monospace;
+    }
+
+    .status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 8px var(--green);
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.6; transform: scale(0.85); }
+    }
+
+    .version-tag {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    /* ── Main ── */
+    main {
+      display: grid;
+      grid-template-columns: 1fr 380px;
+      gap: 0;
+      height: calc(100vh - 77px);
+    }
+
+    /* ── Left panel ── */
+    .left-panel {
+      padding: 36px 40px;
+      overflow-y: auto;
+      border-right: 1px solid var(--border);
+    }
+
+    .section-label {
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 2px;
+      color: var(--muted);
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+
+    /* ── Input area ── */
+    .input-area {
+      margin-bottom: 36px;
+    }
+
+    .input-headline {
+      font-family: 'Syne', sans-serif;
+      font-size: 28px;
+      font-weight: 700;
+      line-height: 1.2;
+      margin-bottom: 8px;
+      letter-spacing: -0.5px;
+    }
+
+    .input-headline em {
+      font-style: normal;
+      color: var(--accent);
+    }
+
+    .input-sub {
+      font-size: 14px;
+      color: var(--muted);
+      margin-bottom: 24px;
+      line-height: 1.6;
+    }
+
+    .input-wrapper {
+      position: relative;
+    }
+
+    textarea {
+      width: 100%;
+      background: var(--panel);
+      border: 1px solid var(--border2);
+      border-radius: 12px;
+      padding: 18px 20px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 15px;
+      color: var(--text);
+      resize: none;
+      height: 120px;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      line-height: 1.6;
+    }
+
+    textarea::placeholder { color: var(--muted); }
+
+    textarea:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(0,212,255,0.08);
+    }
+
+    .char-count {
+      position: absolute;
+      bottom: 14px;
+      right: 16px;
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .btn-analyze {
+      width: 100%;
+      margin-top: 12px;
+      padding: 16px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border: none;
+      border-radius: 10px;
+      font-family: 'Syne', sans-serif;
+      font-weight: 600;
+      font-size: 15px;
+      color: var(--bg);
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.15s;
+      letter-spacing: 0.3px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn-analyze:hover { opacity: 0.9; transform: translateY(-1px); }
+    .btn-analyze:active { transform: translateY(0); }
+    .btn-analyze:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+    .btn-analyze .btn-inner {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    /* ── Quick samples ── */
+    .samples {
+      margin-bottom: 36px;
+    }
+
+    .samples-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .sample-btn {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 12px;
+      color: var(--muted);
+      cursor: pointer;
+      text-align: left;
+      transition: all 0.2s;
+      line-height: 1.4;
+      font-family: 'DM Sans', sans-serif;
+    }
+
+    .sample-btn:hover {
+      border-color: var(--border2);
+      color: var(--text);
+      background: rgba(255,255,255,0.03);
+    }
+
+    .sample-tag {
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      margin-bottom: 4px;
+      display: block;
+    }
+
+    /* ── Result card ── */
+    .result-card {
+      background: var(--panel);
+      border: 1px solid var(--border2);
+      border-radius: 16px;
+      padding: 28px;
+      display: none;
+      animation: slideUp 0.3s ease;
+    }
+
+    .result-card.visible { display: block; }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .result-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 24px;
+    }
+
+    .result-intent {
+      font-family: 'Syne', sans-serif;
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+    }
+
+    .result-method {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      padding: 4px 10px;
+      border-radius: 100px;
+      background: rgba(0,212,255,0.08);
+      border: 1px solid rgba(0,212,255,0.15);
+      color: var(--accent);
+    }
+
+    .result-method.llm {
+      background: rgba(179,136,255,0.08);
+      border-color: rgba(179,136,255,0.15);
+      color: var(--purple);
+    }
+
+    /* ── Confidence bar ── */
+    .confidence-section {
+      margin-bottom: 24px;
+    }
+
+    .confidence-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .confidence-label {
+      font-size: 12px;
+      color: var(--muted);
+      font-family: 'DM Mono', monospace;
+    }
+
+    .confidence-value {
+      font-family: 'DM Mono', monospace;
+      font-size: 24px;
+      font-weight: 500;
+    }
+
+    .confidence-bar-track {
+      height: 6px;
+      background: var(--border);
+      border-radius: 100px;
+      overflow: hidden;
+    }
+
+    .confidence-bar-fill {
+      height: 100%;
+      border-radius: 100px;
+      transition: width 0.6s cubic-bezier(0.4,0,0.2,1);
+      width: 0%;
+    }
+
+    /* ── Action card ── */
+    .action-card {
+      background: rgba(0,212,255,0.04);
+      border: 1px solid rgba(0,212,255,0.12);
+      border-radius: 10px;
+      padding: 16px 18px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .action-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      background: rgba(0,212,255,0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+
+    .action-label {
+      font-size: 11px;
+      color: var(--muted);
+      font-family: 'DM Mono', monospace;
+      margin-bottom: 3px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .action-text {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text);
+    }
+
+    /* ── Error card ── */
+    .error-card {
+      background: rgba(255,77,106,0.06);
+      border: 1px solid rgba(255,77,106,0.2);
+      border-radius: 10px;
+      padding: 16px 18px;
+      color: var(--red);
+      font-size: 14px;
+      display: none;
+    }
+
+    .error-card.visible { display: block; }
+
+    /* ── Loading ── */
+    .loading {
+      display: none;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 20px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .loading.visible { display: flex; }
+
+    .spinner {
+      width: 18px;
+      height: 18px;
+      border: 2px solid var(--border2);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Right panel ── */
+    .right-panel {
+      background: var(--surface);
+      padding: 32px 28px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 28px;
+    }
+
+    /* ── Stats ── */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .stat-card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+    }
+
+    .stat-value {
+      font-family: 'Syne', sans-serif;
+      font-size: 26px;
+      font-weight: 700;
+      letter-spacing: -1px;
+      line-height: 1;
+      margin-bottom: 4px;
+    }
+
+    .stat-label {
+      font-size: 11px;
+      color: var(--muted);
+      font-family: 'DM Mono', monospace;
+    }
+
+    /* ── Intent legend ── */
+    .intent-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .intent-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 14px;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      transition: border-color 0.2s;
+    }
+
+    .intent-row.active {
+      border-color: var(--border2);
+      background: rgba(255,255,255,0.02);
+    }
+
+    .intent-row-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .intent-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .intent-name {
+      font-size: 12px;
+      color: var(--text);
+      font-family: 'DM Mono', monospace;
+    }
+
+    .intent-count {
+      font-family: 'DM Mono', monospace;
+      font-size: 12px;
+      color: var(--muted);
+      background: var(--border);
+      padding: 2px 8px;
+      border-radius: 100px;
+    }
+
+    /* ── History ── */
+    .history-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .history-empty {
+      text-align: center;
+      color: var(--muted);
+      font-size: 13px;
+      padding: 20px;
+      font-family: 'DM Mono', monospace;
+    }
+
+    .history-item {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 14px;
+      animation: fadeIn 0.2s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    .history-intent {
+      font-size: 12px;
+      font-weight: 600;
+      margin-bottom: 4px;
+      font-family: 'DM Mono', monospace;
+    }
+
+    .history-text {
+      font-size: 12px;
+      color: var(--muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .history-meta {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 6px;
+    }
+
+    .history-conf {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .history-time {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    /* ── Intent colors ── */
+    .c-legitimate  { color: var(--intent-legitimate); }
+    .c-suspicious  { color: var(--intent-suspicious); }
+    .c-takeover    { color: var(--intent-takeover); }
+    .c-phishing    { color: var(--intent-phishing); }
+    .c-dispute     { color: var(--intent-dispute); }
+    .c-unusual     { color: var(--intent-unusual); }
+    .c-recovery    { color: var(--intent-recovery); }
+
+    .bg-legitimate  { background: var(--intent-legitimate); }
+    .bg-suspicious  { background: var(--intent-suspicious); }
+    .bg-takeover    { background: var(--intent-takeover); }
+    .bg-phishing    { background: var(--intent-phishing); }
+    .bg-dispute     { background: var(--intent-dispute); }
+    .bg-unusual     { background: var(--intent-unusual); }
+    .bg-recovery    { background: var(--intent-recovery); }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
+  </style>
+</head>
+<body>
+<div class="shell">
+
+  <!-- Header -->
+  <header>
+    <div class="logo">
+      <div class="logo-mark">PX</div>
+      <div class="logo-text">Phe<span>lix</span></div>
+    </div>
+    <div class="header-meta">
+      <div class="status-pill">
+        <div class="status-dot"></div>
+        API LIVE
+      </div>
+      <div class="version-tag">v1.0.0</div>
+    </div>
+  </header>
+
+  <main>
+
+    <!-- Left Panel -->
+    <div class="left-panel">
+
+      <!-- Input -->
+      <div class="input-area">
+        <div class="section-label">// fraud intelligence</div>
+        <div class="input-headline">Classify any<br/><em>customer message</em></div>
+        <div class="input-sub">Powered by ML + LLM cascade. Detects fraud intent in milliseconds.</div>
+
+        <div class="input-wrapper">
+          <textarea
+            id="messageInput"
+            placeholder="Type or paste a customer message here...&#10;&#10;e.g. 'Someone called me from the bank asking for my PIN'"
+            maxlength="500"
+          ></textarea>
+          <div class="char-count" id="charCount">0 / 500</div>
+        </div>
+
+        <button class="btn-analyze" id="analyzeBtn" onclick="analyze()">
+          <div class="btn-inner">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            Analyze Message
+          </div>
+        </button>
+      </div>
+
+      <!-- Samples -->
+      <div class="samples">
+        <div class="section-label">// quick samples</div>
+        <div class="samples-grid">
+          <button class="sample-btn" onclick="loadSample(this)">
+            <span class="sample-tag c-phishing">phishing</span>
+            Someone called claiming to be from my bank asking for my PIN
+          </button>
+          <button class="sample-btn" onclick="loadSample(this)">
+            <span class="sample-tag c-suspicious">suspicious</span>
+            Transfer all my money to this new account immediately
+          </button>
+          <button class="sample-btn" onclick="loadSample(this)">
+            <span class="sample-tag c-takeover">takeover</span>
+            My password was changed and I did not change it
+          </button>
+          <button class="sample-btn" onclick="loadSample(this)">
+            <span class="sample-tag c-recovery">recovery</span>
+            I forgot my internet banking password
+          </button>
+          <button class="sample-btn" onclick="loadSample(this)">
+            <span class="sample-tag c-dispute">dispute</span>
+            I was debited twice for the same transaction
+          </button>
+          <button class="sample-btn" onclick="loadSample(this)">
+            <span class="sample-tag c-legitimate">inquiry</span>
+            What are the charges for international transfers
+          </button>
+        </div>
+      </div>
+
+      <!-- Loading -->
+      <div class="loading" id="loading">
+        <div class="spinner"></div>
+        Analyzing message...
+      </div>
+
+      <!-- Error -->
+      <div class="error-card" id="errorCard"></div>
+
+      <!-- Result -->
+      <div class="result-card" id="resultCard">
+        <div class="result-top">
+          <div class="result-intent" id="resultIntent">—</div>
+          <div class="result-method" id="resultMethod">ml_model</div>
+        </div>
+
+        <div class="confidence-section">
+          <div class="confidence-header">
+            <div class="confidence-label">CONFIDENCE SCORE</div>
+            <div class="confidence-value" id="confidenceValue">—</div>
+          </div>
+          <div class="confidence-bar-track">
+            <div class="confidence-bar-fill" id="confidenceBar"></div>
+          </div>
+        </div>
+
+        <div class="action-card" id="actionCard">
+          <div class="action-icon" id="actionIcon">⚡</div>
+          <div>
+            <div class="action-label">Recommended Action</div>
+            <div class="action-text" id="actionText">—</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Right Panel -->
+    <div class="right-panel">
+
+      <!-- Stats -->
+      <div>
+        <div class="section-label">// session stats</div>
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-value" id="statTotal">0</div>
+            <div class="stat-label">ANALYZED</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" id="statFlagged" style="color:var(--red)">0</div>
+            <div class="stat-label">FLAGGED</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" id="statAvgConf">—</div>
+            <div class="stat-label">AVG CONF</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" id="statLlm" style="color:var(--purple)">0</div>
+            <div class="stat-label">LLM CALLS</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Intent breakdown -->
+      <div>
+        <div class="section-label">// intent breakdown</div>
+        <div class="intent-list" id="intentList">
+          <div class="intent-row" data-intent="legitimate_inquiry">
+            <div class="intent-row-left">
+              <div class="intent-dot bg-legitimate"></div>
+              <div class="intent-name">legitimate_inquiry</div>
+            </div>
+            <div class="intent-count">0</div>
+          </div>
+          <div class="intent-row" data-intent="suspicious_transfer">
+            <div class="intent-row-left">
+              <div class="intent-dot bg-suspicious"></div>
+              <div class="intent-name">suspicious_transfer</div>
+            </div>
+            <div class="intent-count">0</div>
+          </div>
+          <div class="intent-row" data-intent="account_takeover">
+            <div class="intent-row-left">
+              <div class="intent-dot bg-takeover"></div>
+              <div class="intent-name">account_takeover</div>
+            </div>
+            <div class="intent-count">0</div>
+          </div>
+          <div class="intent-row" data-intent="phishing_attempt">
+            <div class="intent-row-left">
+              <div class="intent-dot bg-phishing"></div>
+              <div class="intent-name">phishing_attempt</div>
+            </div>
+            <div class="intent-count">0</div>
+          </div>
+          <div class="intent-row" data-intent="dispute_claim">
+            <div class="intent-row-left">
+              <div class="intent-dot bg-dispute"></div>
+              <div class="intent-name">dispute_claim</div>
+            </div>
+            <div class="intent-count">0</div>
+          </div>
+          <div class="intent-row" data-intent="unusual_activity">
+            <div class="intent-row-left">
+              <div class="intent-dot bg-unusual"></div>
+              <div class="intent-name">unusual_activity</div>
+            </div>
+            <div class="intent-count">0</div>
+          </div>
+          <div class="intent-row" data-intent="account_recovery">
+            <div class="intent-row-left">
+              <div class="intent-dot bg-recovery"></div>
+              <div class="intent-name">account_recovery</div>
+            </div>
+            <div class="intent-count">0</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- History -->
+      <div>
+        <div class="section-label">// recent analyses</div>
+        <div class="history-list" id="historyList">
+          <div class="history-empty">No analyses yet</div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<script>
+  const API = 'http://127.0.0.1:5000/predict';
+
+  // Session state
+  const state = {
+    total: 0,
+    flagged: 0,
+    llmCalls: 0,
+    confidences: [],
+    intentCounts: {
+      legitimate_inquiry: 0,
+      suspicious_transfer: 0,
+      account_takeover: 0,
+      phishing_attempt: 0,
+      dispute_claim: 0,
+      unusual_activity: 0,
+      account_recovery: 0,
+    },
+    history: []
+  };
+
+  const FLAGGED_INTENTS = ['suspicious_transfer', 'account_takeover', 'phishing_attempt', 'unusual_activity'];
+
+  const INTENT_COLORS = {
+    legitimate_inquiry:  'var(--intent-legitimate)',
+    suspicious_transfer: 'var(--intent-suspicious)',
+    account_takeover:    'var(--intent-takeover)',
+    phishing_attempt:    'var(--intent-phishing)',
+    dispute_claim:       'var(--intent-dispute)',
+    unusual_activity:    'var(--intent-unusual)',
+    account_recovery:    'var(--intent-recovery)',
+  };
+
+  const INTENT_ICONS = {
+    legitimate_inquiry:  '✉️',
+    suspicious_transfer: '🚨',
+    account_takeover:    '🔒',
+    phishing_attempt:    '🎣',
+    dispute_claim:       '⚖️',
+    unusual_activity:    '👁️',
+    account_recovery:    '🔑',
+  };
+
+  const INTENT_LABELS = {
+    legitimate_inquiry:  'Legitimate Inquiry',
+    suspicious_transfer: 'Suspicious Transfer',
+    account_takeover:    'Account Takeover',
+    phishing_attempt:    'Phishing Attempt',
+    dispute_claim:       'Dispute Claim',
+    unusual_activity:    'Unusual Activity',
+    account_recovery:    'Account Recovery',
+  };
+
+  // Char counter
+  const input = document.getElementById('messageInput');
+  input.addEventListener('input', () => {
+    document.getElementById('charCount').textContent = `${input.value.length} / 500`;
+  });
+
+  // Enter to submit (Shift+Enter for newline)
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      analyze();
+    }
+  });
+
+  function loadSample(btn) {
+    const text = btn.querySelector('span').nextSibling.textContent.trim();
+    input.value = text;
+    document.getElementById('charCount').textContent = `${text.length} / 500`;
+    input.focus();
+  }
+
+  async function analyze() {
+    const text = input.value.trim();
+    if (!text) return;
+
+    // UI state
+    document.getElementById('analyzeBtn').disabled = true;
+    document.getElementById('loading').classList.add('visible');
+    document.getElementById('resultCard').classList.remove('visible');
+    document.getElementById('errorCard').classList.remove('visible');
+
+    try {
+      const res = await fetch(API, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text })
+      });
+
+      const data = await res.json();
+
+      if (data.error) {
+        showError(data.error);
+        return;
+      }
+
+      showResult(data, text);
+      updateState(data, text);
+
+    } catch (err) {
+      showError('Could not reach the API. Make sure python api/main.py is running.');
+    } finally {
+      document.getElementById('analyzeBtn').disabled = false;
+      document.getElementById('loading').classList.remove('visible');
+    }
+  }
+
+  function showResult(data, text) {
+    const { intent, confidence, method, recommended_action } = data;
+    const color = INTENT_COLORS[intent] || 'var(--text)';
+    const label = INTENT_LABELS[intent] || intent;
+    const icon = INTENT_ICONS[intent] || '⚡';
+
+    // Intent name
+    const intentEl = document.getElementById('resultIntent');
+    intentEl.textContent = label;
+    intentEl.style.color = color;
+
+    // Method badge
+    const methodEl = document.getElementById('resultMethod');
+    methodEl.textContent = method === 'llm_fallback' ? '✦ LLM fallback' : '⚡ ML model';
+    methodEl.className = 'result-method' + (method === 'llm_fallback' ? ' llm' : '');
+
+    // Confidence
+    document.getElementById('confidenceValue').textContent = `${confidence}%`;
+    document.getElementById('confidenceValue').style.color = color;
+    setTimeout(() => {
+      document.getElementById('confidenceBar').style.width = `${confidence}%`;
+      document.getElementById('confidenceBar').style.background = color;
+    }, 50);
+
+    // Action
+    document.getElementById('actionIcon').textContent = icon;
+    document.getElementById('actionText').textContent = recommended_action;
+
+    document.getElementById('resultCard').classList.add('visible');
+  }
+
+  function showError(msg) {
+    const el = document.getElementById('errorCard');
+    el.textContent = `⚠ ${msg}`;
+    el.classList.add('visible');
+  }
+
+  function updateState(data, text) {
+    const { intent, confidence, method } = data;
+
+    state.total++;
+    if (FLAGGED_INTENTS.includes(intent)) state.flagged++;
+    if (method === 'llm_fallback') state.llmCalls++;
+    state.confidences.push(confidence);
+    if (state.intentCounts[intent] !== undefined) state.intentCounts[intent]++;
+
+    // Add to history
+    state.history.unshift({ intent, confidence, method, text, time: new Date() });
+    if (state.history.length > 10) state.history.pop();
+
+    updateUI();
+  }
+
+  function updateUI() {
+    // Stats
+    document.getElementById('statTotal').textContent = state.total;
+    document.getElementById('statFlagged').textContent = state.flagged;
+    document.getElementById('statLlm').textContent = state.llmCalls;
+    const avg = state.confidences.length
+      ? Math.round(state.confidences.reduce((a,b) => a+b, 0) / state.confidences.length)
+      : 0;
+    document.getElementById('statAvgConf').textContent = state.confidences.length ? `${avg}%` : '—';
+
+    // Intent counts
+    Object.entries(state.intentCounts).forEach(([intent, count]) => {
+      const row = document.querySelector(`[data-intent="${intent}"]`);
+      if (row) {
+        row.querySelector('.intent-count').textContent = count;
+        if (count > 0) row.classList.add('active');
+      }
+    });
+
+    // History
+    const historyEl = document.getElementById('historyList');
+    if (state.history.length === 0) {
+      historyEl.innerHTML = '<div class="history-empty">No analyses yet</div>';
+      return;
+    }
+
+    historyEl.innerHTML = state.history.map(item => {
+      const color = INTENT_COLORS[item.intent] || 'var(--text)';
+      const label = INTENT_LABELS[item.intent] || item.intent;
+      const time = item.time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      return `
+        <div class="history-item">
+          <div class="history-intent" style="color:${color}">${label}</div>
+          <div class="history-text">${item.text}</div>
+          <div class="history-meta">
+            <div class="history-conf">${item.confidence}% · ${item.method}</div>
+            <div class="history-time">${time}</div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+</script>
+</body>
+</html>
