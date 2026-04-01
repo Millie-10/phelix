@@ -21,6 +21,12 @@ from sklearn.linear_model import LogisticRegression
 
 MODEL_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "phelix_model.pkl")
 
+def clean_text(text):
+    text = text.lower()
+    text = re.sub(r'[^\w\s]', '', text)
+    text = text.strip()
+    return text
+
 def train_model():
     from data.training_data import TRAINING_DATA
     df = pd.DataFrame(TRAINING_DATA)
@@ -50,12 +56,6 @@ def load_or_train():
 bundle = load_or_train()
 
 # ── Helper functions ──────────────────────────────────────────
-def clean_text(text):
-    text = text.lower()
-    text = re.sub(r'[^\w\s]', '', text)
-    text = text.strip()
-    return text
-
 def predict(text):
     from dotenv import load_dotenv
     from openai import OpenAI
